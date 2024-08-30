@@ -22,32 +22,40 @@ runs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
-          #!/usr/bin/env bash
-          set +e
-          set +o pipefail
-          
-          TICKET_ID_LIST=()
-          TICKET_REGEX="\s*${{inputs.id_prefix}}-[0-9]+\s*"
+        #!/usr/bin/env bash
+        set +e
+        set +o pipefail
+        
+        TICKET_ID_LIST=()
+        TICKET_REGEX="\s*${{inputs.id_prefix}}-[0-9]+\s*"
+        echo "--DEBUG: Will start matching IDs with this regex: $TICKET_REGEX"
+        
+        if [[ $GITHUB_EVENT_NAME == 'pull_request' ]]; then
+          echo "--INFO: This is a pull request event"
           
           # Extract ticket ID from PR title
-          cat $GITHUB_EVENT_PATH | jq -r '.pull_request.title' | grep -oE $TICKET_REGEX
-          # Extract ticket ID from PR body
-          cat $GITHUB_EVENT_PATH | jq -r '.pull_request.body' | grep -oE $TICKET_REGEX
-          # Extract ticket ID from branch name
-          cat $GITHUB_EVENT_PATH | jq -r '.pull_request.head.ref' | grep -oE $TICKET_REGEX
-        
-          gh api $(cat $GITHUB_EVENT_PATH | jq -r '.pull_request.commits_url') > $(RUNNER_WORKSPACE)/commits.json
-        
-           https://api.github.com/repos/mashail/ticket-ids-extractor-action/pulls/1/commits
-          if [[ $GITHUB_EVENT_NAME == 'pull_request' ]]; then
-            TICKET_ID_LIST=$(echo "$PR_TITLE" | grep -oE $TICKET_REGEX)
-          fi
+          echo "--INFO: Matching ticket ID from PR title"
+          TICKET_ID_LIST+=(cat $GITHUB_EVENT_PATH | jq -r '.pull_request.title' | grep -oE $TICKET_REGEX)
           
+          # Extract ticket ID from PR body
+          echo "--INFO: Matching ticket ID from PR body"
+          TICKET_ID_LIST+=(cat $GITHUB_EVENT_PATH | jq -r '.pull_request.body' | grep -oE $TICKET_REGEX)
+          
+          # Extract ticket ID from branch name
+          echo "--INFO: Matching ticket ID from branch name"
+          TICKET_ID_LIST+=(cat $GITHUB_EVENT_PATH | jq -r '.pull_request.head.ref' | grep -oE $TICKET_REGEX)
+          
+          echo "--INFO: Matching ticket ID from commit messages"
+          gh api $(cat $GITHUB_EVENT_PATH | jq -r '.pull_request.commits_url') > $(RUNNER_WORKSPACE)/commits.json
+          cat $(RUNNER_WORKSPACE)/commits.json | jq -r '.[].commit.message' | while read -r message ; do TICHET_ID_LIST+=(echo "$message" | grep -oE $TICKET_REGEX); done
+          
+        fi
+
         
-          if [[ -z $TICKET_ID_LIST ]]; then
-            echo "--INFO: Cound not find any ticket ID"
-          else
-            echo "--INFO: Extracted these ticket IDs: $TICKET_ID_LIST"
-            echo "ticket_id_list=$TICKET_ID_LIST" >> "$GITHUB_OUTPUT"
-          fi
+        if [[ -z $TICKET_ID_LIST ]]; then
+          echo "--INFO: Cound not find any ticket ID"
+        else
+          echo "--INFO: Extracted these ticket IDs: $TICKET_ID_LIST"
+          echo "ticket_id_list=$TICKET_ID_LIST" >> "$GITHUB_OUTPUT"
+        fi
       shell: bash
