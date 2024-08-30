@@ -26,6 +26,12 @@ runs:
         set +e
         set +o pipefail
         
+        if [[ -z ${{inputs.id_prefix}} ]]
+        then
+          echo "--ERR: id_prefix is required"
+          exit 1
+        fi
+        
         TICKET_ID_LIST=()
         TICKET_REGEX="\s*${{inputs.id_prefix}}-[0-9]+\s*"
         echo "--DEBUG: Will start matching IDs with this regex: $TICKET_REGEX"
@@ -47,9 +53,7 @@ runs:
           
           echo "--INFO: Matching ticket ID from commit messages"
           gh api $(cat $GITHUB_EVENT_PATH | jq -r '.pull_request.commits_url') | jq -r '.[].commit.message' | while read -r message; do
-            echo "--DEBUG: Matching ticket ID from commit message: $message"
-            echo "--DEBUG: Result `echo "$message" | egrep -o $TICKET_REGEX`"
-            TICHET_ID_LIST+=($(echo "$message" | egrep -o $TICKET_REGEX));
+            TICHET_ID_LIST+=($(echo $(echo "$message" | egrep -o $TICKET_REGEX)));
           done
         fi
 
