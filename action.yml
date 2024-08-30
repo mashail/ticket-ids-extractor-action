@@ -64,6 +64,10 @@ runs:
           echo "--INFO: Cound not find any ticket ID"
         else
           echo "--INFO: Extracted these ticket IDs: ${TICKET_ID_LIST[*]}"
-          echo "ticket_id_list=${TICKET_ID_LIST[*]}" >> "$GITHUB_OUTPUT"
+          
+          IFS=" " read -r -a UNIQUE_TICKET_ID_LIST <<< "$(echo "${TICKET_ID_LIST[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' ')"
+        
+          echo "--INFO: Extracted these ticket IDs: ${TICKET_ID_LIST[*]}"
+          echo "ticket_id_list=${UNIQUE_TICKET_ID_LIST[*]}" >> "$GITHUB_OUTPUT"
         fi
       shell: bash
