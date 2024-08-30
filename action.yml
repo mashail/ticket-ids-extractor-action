@@ -24,9 +24,16 @@ runs:
           set +o pipefail
           
           TICKET_ID_LIST=()
-          TICKET_REGEX="\s+${{inputs.id_prefix}}-[0-9]+\s+"
+          TICKET_REGEX="\s*${{inputs.id_prefix}}-[0-9]+\s*"
           
-          cat $GITHUB_EVENT_PATH | jq -r '.commits[].message' | while read -r line; do
+          # Extract ticket ID from PR title
+          cat $GITHUB_EVENT_PATH | jq -r '.pull_request.title' | grep -oE $TICKET_REGEX
+          # Extract ticket ID from PR body
+          cat $GITHUB_EVENT_PATH | jq -r '.pull_request.body' | grep -oE $TICKET_REGEX
+          # Extract ticket ID from branch name
+          cat $GITHUB_EVENT_PATH | jq -r '.pull_request.head.ref' | grep -oE $TICKET_REGEX
+        
+          cat $GITHUB_EVENT_PATH | jq -r '.pull_request.comments_url'
         
           if [[ $GITHUB_EVENT_NAME == 'pull_request' ]]; then
             TICKET_ID_LIST=$(echo "$PR_TITLE" | grep -oE $TICKET_REGEX)
