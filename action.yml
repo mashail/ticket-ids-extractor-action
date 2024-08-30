@@ -44,8 +44,8 @@ runs:
           TICKET_ID_LIST+=(cat $GITHUB_EVENT_PATH | jq -r '.pull_request.head.ref' | grep -oE $TICKET_REGEX)
           
           echo "--INFO: Matching ticket ID from commit messages"
-          gh api $(cat $GITHUB_EVENT_PATH | jq -r '.pull_request.commits_url') > $(RUNNER_WORKSPACE)/commits.json
-          cat $(RUNNER_WORKSPACE)/commits.json | jq -r '.[].commit.message' | while read -r message ; do TICHET_ID_LIST+=(echo "$message" | grep -oE $TICKET_REGEX); done
+          gh api $(cat $GITHUB_EVENT_PATH | jq -r '.pull_request.commits_url') > $RUNNER_WORKSPAC/commits.json
+          cat $RUNNER_WORKSPACE/commits.json | jq -r '.[].commit.message' | while read -r message ; do TICHET_ID_LIST+=(echo "$message" | grep -oE $TICKET_REGEX); done
           
         fi
 
