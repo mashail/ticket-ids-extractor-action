@@ -47,6 +47,8 @@ runs:
           
           echo "--INFO: Matching ticket ID from commit messages"
           gh api $(cat $GITHUB_EVENT_PATH | jq -r '.pull_request.commits_url') | jq -r '.[].commit.message' | while read -r message; do
+            echo "--DEBUG: Matching ticket ID from commit message: $message"
+            echo "--DEBUG: Result $(echo "$message" | egrep -ow $TICKET_REGEX)"
             TICHET_ID_LIST+=($(echo "$message" | egrep -ow $TICKET_REGEX));
           done
         fi
