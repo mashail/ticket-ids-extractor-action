@@ -1,0 +1,40 @@
+name: Test
+on:
+  workflow_dispatch:
+    inputs:
+      debug:
+        description: 'Debug mode'
+        required: false
+        default: 'false'
+
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  pull-requests: read
+  issues: read
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+
+      - name: Setup tmate session
+        if: ${{inputs.debug == 'true'}}
+        uses: mxschmitt/action-tmate@b3db6e16e597d92037c8647e54acc5d2b1b48dee # v3.18
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Ticket IDs Extractor
+        id: ticket_id_extractor
+        uses: ./ # Use the action in the current repository
+        with:
+          id_prefix: 'TEST'
+          insensitive: true
+
+      - name: Print Jira ID
+        run: echo "--INFO:Here is the ticket ID:${{ steps.ticket_id_extractor.outputs.ticket_id_list }}"
