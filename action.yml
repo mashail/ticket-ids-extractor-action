@@ -35,19 +35,19 @@ runs:
           
           # Extract ticket ID from PR title
           echo "--INFO: Matching ticket ID from PR title"
-          TICKET_ID_LIST+=($(cat $GITHUB_EVENT_PATH | jq -r '.pull_request.title' | grep -oE $TICKET_REGEX))
+          TICKET_ID_LIST+=($(cat $GITHUB_EVENT_PATH | jq -r '.pull_request.title' | egrep -ow $TICKET_REGEX))
           
           # Extract ticket ID from PR body
           echo "--INFO: Matching ticket ID from PR body"
-          TICKET_ID_LIST+=($(cat $GITHUB_EVENT_PATH | jq -r '.pull_request.body' | grep -oE $TICKET_REGEX))
+          TICKET_ID_LIST+=($(cat $GITHUB_EVENT_PATH | jq -r '.pull_request.body' | egrep -ow $TICKET_REGEX))
           
           # Extract ticket ID from branch name
           echo "--INFO: Matching ticket ID from branch name"
-          TICKET_ID_LIST+=($(cat $GITHUB_EVENT_PATH | jq -r '.pull_request.head.ref' | grep -oE $TICKET_REGEX))
+          TICKET_ID_LIST+=($(cat $GITHUB_EVENT_PATH | jq -r '.pull_request.head.ref' | egrep -ow $TICKET_REGEX))
           
           echo "--INFO: Matching ticket ID from commit messages"
           gh api $(cat $GITHUB_EVENT_PATH | jq -r '.pull_request.commits_url') | jq -r '.[].commit.message' | while read -r message; do
-            TICHET_ID_LIST+=($(echo "$message" | grep -oE $TICKET_REGEX));
+            TICHET_ID_LIST+=($(echo "$message" | egrep -ow $TICKET_REGEX));
           done
         fi
 
@@ -55,7 +55,7 @@ runs:
         if [[ -z $TICKET_ID_LIST ]]; then
           echo "--INFO: Cound not find any ticket ID"
         else
-          echo "--INFO: Extracted these ticket IDs: $TICKET_ID_LIST"
-          echo "ticket_id_list=$TICKET_ID_LIST" >> "$GITHUB_OUTPUT"
+          echo "--INFO: Extracted these ticket IDs: ${TICKET_ID_LIST[*]}"
+          echo "ticket_id_list=${TICKET_ID_LIST[*]}" >> "$GITHUB_OUTPUT"
         fi
       shell: bash
