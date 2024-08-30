@@ -19,8 +19,6 @@ runs:
   steps:
     - name: Ticket IDs Extractor
       id: extract_ticket_id_list
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         #!/usr/bin/env bash
         set +e
