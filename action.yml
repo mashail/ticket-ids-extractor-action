@@ -19,6 +19,8 @@ runs:
   steps:
     - name: Ticket IDs Extractor
       id: extract_ticket_id_list
+      env:
+        GH_TOKEN: ${{ github.token }}
       run: |
         #!/usr/bin/env bash
         set +e
@@ -33,15 +35,15 @@ runs:
           
           # Extract ticket ID from PR title
           echo "--INFO: Matching ticket ID from PR title"
-          TICKET_ID_LIST+=(cat $GITHUB_EVENT_PATH | jq -r '.pull_request.title' | grep -oE $TICKET_REGEX)
+          TICKET_ID_LIST+=($(cat $GITHUB_EVENT_PATH | jq -r '.pull_request.title' | grep -oE $TICKET_REGEX))
           
           # Extract ticket ID from PR body
           echo "--INFO: Matching ticket ID from PR body"
-          TICKET_ID_LIST+=(cat $GITHUB_EVENT_PATH | jq -r '.pull_request.body' | grep -oE $TICKET_REGEX)
+          TICKET_ID_LIST+=($(cat $GITHUB_EVENT_PATH | jq -r '.pull_request.body' | grep -oE $TICKET_REGEX))
           
           # Extract ticket ID from branch name
           echo "--INFO: Matching ticket ID from branch name"
-          TICKET_ID_LIST+=(cat $GITHUB_EVENT_PATH | jq -r '.pull_request.head.ref' | grep -oE $TICKET_REGEX)
+          TICKET_ID_LIST+=($(cat $GITHUB_EVENT_PATH | jq -r '.pull_request.head.ref' | grep -oE $TICKET_REGEX))
           
           echo "--INFO: Matching ticket ID from commit messages"
           gh api $(cat $GITHUB_EVENT_PATH | jq -r '.pull_request.commits_url') | sudo tee $RUNNER_WORKSPAC/commits.json
