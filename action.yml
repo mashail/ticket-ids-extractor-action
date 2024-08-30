@@ -1,0 +1,87 @@
+name: 'Ticket IDs Extractor'
+description: 'Extractor of Task management Ticket IDs from PR title, branch name, commit messages or commit body'
+inputs:
+  id_prefix:
+    description: 'Prefix to be match to the ticket ID'
+    required: true
+    default: ''
+  insensitive:
+    description: 'Should it be case insensitive match or not'
+    required: false
+    default: 'true'
+outputs:
+  ticket_id_list:
+    description: 'List of extracted ticket IDs'
+    value: ${{ steps.extract_ticket_id_list.outputs.ticket_id_list }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Ticket IDs Extractor
+      id: extract_ticket_id_list
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        #!/usr/bin/env bash
+        set +e
+        set +o pipefail
+        
+        if [[ -z ${{inputs.id_prefix}} ]]
+        then
+          echo "--ERR: id_prefix is required"
+          exit 1
+        fi
+        
+        TICKET_ID_LIST=()
+        TICKET_REGEX="\s*${{inputs.id_prefix}}-[0-9]+\s*"
+        echo "--DEBUG: Will start matching IDs with this regex: $TICKET_REGEX"
+        
+        if [[ $GITHUB_EVENT_NAME == 'pull_request' ]]; then
+          echo "--INFO: This is a 'pull request' event"
+          
+          # Extract ticket ID from PR title
+          echo "--INFO: Matching ticket ID from PR title"
+          TICKET_ID_LIST+=($(cat $GITHUB_EVENT_PATH | jq -r '.pull_request.title' | egrep -o $TICKET_REGEX))
+          
+          # Extract ticket ID from PR body
+          echo "--INFO: Matching ticket ID from PR body"
+          TICKET_ID_LIST+=($(cat $GITHUB_EVENT_PATH | jq -r '.pull_request.body' | egrep -o $TICKET_REGEX))
+          
+          # Extract ticket ID from branch name
+          echo "--INFO: Matching ticket ID from branch name"
+          TICKET_ID_LIST+=($(cat $GITHUB_EVENT_PATH | jq -r '.pull_request.head.ref' | egrep -o $TICKET_REGEX))
+          
+          echo "--INFO: Matching ticket ID from commit messages"
+          while read -r message; do
+            echo "--DEBUG: Matching ticket ID from commit message: $message"
+            echo "--DEBUG: Result `echo $(echo "$message" | egrep -o $TICKET_REGEX)`"
+            TICKET_ID_LIST+=($(echo $(echo "$message" | egrep -o $TICKET_REGEX)));
+          done <<< `gh api $(cat $GITHUB_EVENT_PATH | jq -r '.pull_request.commits_url') | jq -r '.[].commit.message'`
+        
+        elif [[ $GITHUB_EVENT_NAME == 'push' ]]; then
+          echo "--INFO: This is a 'push' event"
+          
+          echo "--INFO: Matching ticket ID from commit messages"
+          while read -r message; do
+            echo "--DEBUG: Matching ticket ID from commit message: $message"
+            echo "--DEBUG: Result `echo $(echo "$message" | egrep -o $TICKET_REGEX)`"
+            TICKET_ID_LIST+=($(echo $(echo "$message" | egrep -o $TICKET_REGEX)));
+          done <<< `cat $GITHUB_EVENT_PATH | jq -r '.commits[].message'`
+        
+        
+        else
+          echo "--INFO: Event '$GITHUB_EVENT_NAME' is not supported by action"
+        fi
+
+        
+        if [[ -z $TICKET_ID_LIST ]]; then
+          echo "--INFO: Cound not find any ticket ID"
+        else
+          echo "--INFO: All of the extracted these ticket IDs: ${TICKET_ID_LIST[*]}"
+          
+          IFS=" " read -r -a UNIQUE_TICKET_ID_LIST <<< "$(echo "${TICKET_ID_LIST[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' ')"
+        
+          echo "--INFO: Uniquely extracted these ticket IDs: ${UNIQUE_TICKET_ID_LIST[*]}"
+          echo "ticket_id_list=${UNIQUE_TICKET_ID_LIST[*]}" >> "$GITHUB_OUTPUT"
+        fi
+      shell: bash
