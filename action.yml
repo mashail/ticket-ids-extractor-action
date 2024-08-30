@@ -13,6 +13,7 @@ outputs:
   ticket_id_list:
     description: 'List of extracted ticket IDs'
     value: ${{ steps.extract_ticket_id_list.outputs.ticket_id_list }}
+
 runs:
   using: 'composite'
   steps:
