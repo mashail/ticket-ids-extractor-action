@@ -57,6 +57,14 @@ runs:
             echo "--DEBUG: Result `echo $(echo "$message" | egrep -o $TICKET_REGEX)`"
             TICKET_ID_LIST+=($(echo $(echo "$message" | egrep -o $TICKET_REGEX)));
           done <<< `gh api $(cat $GITHUB_EVENT_PATH | jq -r '.pull_request.commits_url') | jq -r '.[].commit.message'`
+        
+        elif [[ $GITHUB_EVENT_NAME == 'push' ]]; then
+          echo "--INFO: This is a push event"
+          
+          cat $GITHUB_EVENT_PATH 
+        
+        else
+          echo "--INFO: Event '$GITHUB_EVENT_NAME' is not supported by action"
         fi
 
         

@@ -11,6 +11,8 @@ on:
     branches:
       - main
 
+  push: {}
+
 permissions:
   pull-requests: read
   issues: read
