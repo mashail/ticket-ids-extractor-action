@@ -1,7 +1,7 @@
 # Ticket IDs Extractor Action 🔎
 ---
 
-This Action will help you extract the task management ticket IDs regardless of whether your task management system is Linear, Jira, or something else.
+This action will help you extract the task management ticket IDs regardless of whether your task management system is Linear, Jira, or something else.
 You need to provide it with the prefix example `PRJ` and whether to be case-sensitive or not, and it will look for the ticket IDs in the PR title, the branch name, the commits messages, and commits bodies if the event is pull_request. and If the event is pushed it will inspect the branch name the commits message and the commit body.
 The action will collect all ticket IDs and output it for you in recent_ticket_id_list
 
